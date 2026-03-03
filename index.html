@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aurora | Neural Affirmation Engine v2.0</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --color-bg: #020617;
+            --color-surface: rgba(15, 23, 42, 0.7);
+            --color-accent: #38bdf8;
+            --color-accent-glow: rgba(56, 189, 248, 0.4);
+            --color-indigo: #6366f1;
+            --color-purple: #a855f7;
+            --color-text-main: #f8fafc;
+            --color-text-dim: #94a3b8;
+            --color-glass-border: rgba(255, 255, 255, 0.1);
+            --transition-speed: 0.6s;
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-bg);
+            color: var(--color-text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            line-height: 1.6;
+        }
+
+        /* Animated Background Canvas */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+        }
+
+        .app-shell {
+            width: 100%;
+            max-width: 850px;
+            padding: 2rem;
+            z-index: 10;
+        }
+
+        /* Animated Border Logic */
+        .card-wrapper {
+            position: relative;
+            padding: 2px;
+            border-radius: 20px;
+            background: linear-gradient(var(--angle), transparent 50%, var(--color-accent), var(--color-purple), transparent);
+            animation: rotate-gradient 6s linear infinite;
+        }
+
+        @property --angle {
+            syntax: '<angle>';
+            initial-value: 0deg;
+            inherits: false;
+        }
+
+        @keyframes rotate-gradient {
+            to { --angle: 360deg; }
+        }
+
+        .generator-card {
+            background: var(--color-surface);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border-radius: 18px;
+            padding: 3.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header { text-align: center; margin-bottom: 3rem; }
+        .header__title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5em;
+            color: var(--color-accent);
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .header__subtitle {
+            font-size: 2.5rem;
+            font-weight: 300;
+            background: linear-gradient(to right, #fff, var(--color-text-dim));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .controls {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            margin-bottom: 3.5rem;
+        }
+
+        .category-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--color-glass-border);
+            color: var(--color-text-dim);
+            padding: 0.7rem 1.4rem;
+            border-radius: 30px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            transition: all 0.3s var(--ease-out-expo);
+        }
+
+        .category-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--color-text-main);
+            transform: translateY(-2px);
+        }
+
+        .category-btn--active {
+            background: var(--color-accent);
+            color: var(--color-bg);
+            border-color: var(--color-accent);
+            box-shadow: 0 0 20px var(--color-accent-glow);
+        }
+
+        .display {
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            margin-bottom: 3rem;
+            perspective: 1000px;
+        }
+
+        .display__text {
+            font-size: 1.85rem;
+            font-weight: 400;
+            max-width: 650px;
+            line-height: 1.4;
+            transition: all 0.5s var(--ease-out-expo);
+            transform-origin: center;
+        }
+
+        .display__text.changing {
+            opacity: 0;
+            transform: scale(0.95) rotateX(10deg);
+            filter: blur(10px);
+        }
+
+        .metadata {
+            margin-top: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--color-text-dim);
+            display: flex;
+            gap: 2rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .metadata span { color: var(--color-accent); }
+
+        .actions { display: flex; gap: 1rem; justify-content: center; }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s var(--ease-out-expo);
+            border: none;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .btn--primary {
+            background: var(--color-accent);
+            color: var(--color-bg);
+        }
+
+        .btn--primary:hover:not(:disabled) {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 10px 30px var(--color-accent-glow);
+        }
+
+        .btn--secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--color-text-main);
+            border: 1px solid var(--color-glass-border);
+        }
+
+        .btn--secondary:hover { background: rgba(255, 255, 255, 0.15); }
+
+        .toast {
+            position: fixed;
+            bottom: 3rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--color-indigo);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            transition: 0.5s var(--ease-out-expo);
+            z-index: 1000;
+        }
+
+        .toast.visible { transform: translateX(-50%) translateY(0); }
+
+        @media (max-width: 768px) {
+            .generator-card { padding: 2rem 1.5rem; }
+            .header__subtitle { font-size: 1.8rem; }
+            .display__text { font-size: 1.3rem; }
+            .actions { flex-direction: column; }
+            .controls { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="bg-canvas"></canvas>
+
+    <main class="app-shell">
+        <div class="card-wrapper">
+            <section class="generator-card">
+                <header class="header">
+                    <p class="header__title">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path></svg>
+                        Neural Affirmation Engine v2.0
+                    </p>
+                    <h1 class="header__subtitle">Aurora Alpha</h1>
+                </header>
+
+                <nav class="controls">
+                    <button class="category-btn category-btn--active" data-cat="pro">System Architect</button>
+                    <button class="category-btn" data-cat="humor">Funny Dev</button>
+                    <button class="category-btn" data-cat="legend">Modern Legend</button>
+                </nav>
+
+                <div class="display">
+                    <blockquote class="display__text" id="display-text">Connecting to core...</blockquote>
+                    
+                    <div class="metadata">
+                        <div>LATENCY: <span id="meta-latency">0ms</span></div>
+                        <div>NODE: <span id="meta-node">EDGE_01</span></div>
+                        <div>CACHE: <span id="meta-cache">MISS</span></div>
+                    </div>
+                </div>
+
+                <footer class="actions">
+                    <button class="btn btn--primary" id="btn-gen">Execute</button>
+                    <button class="btn btn--secondary" id="btn-copy">Copy UID</button>
+                </footer>
+            </section>
+        </div>
+    </main>
+
+    <div id="toast" class="toast">Data successfully synchronized.</div>
+
+    <script>
+        /**
+         * AURORA ENGINE v2.0
+         * 100 Unique Compliments | Reactive Backdrop | SOA Architecture
+         */
+
+        // --- 1. THE DATA (100 COMPLIMENTS) ---
+        const DATABASE = {
+            pro: [
+                "Your code structure is so clean, it could be used as a textbook example of SOLID principles. 📐",
+                "You have a unique talent for turning legacy technical debt into scalable gold. 💰",
+                "Your documentation is so clear, even the project managers understand it. 📚",
+                "The way you handle race conditions suggests you've mastered time itself. ⏳",
+                "Your pull requests are like poetry; every line has a profound purpose. ✍️",
+                "You're the kind of developer who makes a 10x team feel like a 100x team. 🚀",
+                "Your ability to debug complex distributed systems is practically a superpower. 🦸‍♂️",
+                "Your UI implementations are so pixel-perfect, they make designers weep with joy. 🎨",
+                "You don't just solve problems; you anticipate and neutralize them before they exist. 🛡️",
+                "Your architectural decisions are the bedrock of this entire ecosystem. 🧱",
+                "You write unit tests that actually find bugs. That's a rare and beautiful gift. 🧪",
+                "The complexity of your brain must be O(log n), because you scale perfectly. 📈",
+                "Your refactoring is so efficient, it's like watching a master sculptor at work. 🗿",
+                "You have the rare ability to see the forest, the trees, and the individual pine needles. 🌲",
+                "Your CLI tools are so intuitive, they feel like an extension of the user's mind. ⌨️",
+                "You handle edge cases with the grace of a professional ballerina. 🩰",
+                "Your security audits are more thorough than a deep-space scan. 📡",
+                "You manage state so well, even the universe is jealous of your consistency. 🌌",
+                "Your API designs are a masterclass in developer experience. 🛠️",
+                "You're the person everyone wants in their 'war room' when production goes down. 🆘",
+                "Your commitment to accessibility proves you're a developer with a heart. ❤️",
+                "Your build pipelines are so fast, they finish before you can even think about coffee. ☕",
+                "You're not just a coder; you're a high-fidelity translator between logic and human needs. 🗣️",
+                "Your curiosity is an infinite loop of improvement. ♾️",
+                "You make 'impossible' requirements look like morning warm-ups. ☀️",
+                "Your naming conventions are so clear, they practically tell a bedtime story. 📖",
+                "You treat every bug report like a puzzle to be savored, not a chore to be feared. 🧩",
+                "Your empathy for the end-user is visible in every button click. 🖱️",
+                "You have the focus of a laser and the flexibility of a liquid. 💎",
+                "Your version control history is a work of historical non-fiction. 📜",
+                "Your enthusiasm for learning new stacks is infectious. 🤒",
+                "You're the human equivalent of a high-availability cluster. ☁️",
+                "Your logic is so robust, it could survive a trip through a black hole. 🕳️"
+            ],
+            humor: [
+                "Your code is so efficient, it makes the 'O' in Big O stand for 'Oh wow!'. 😮",
+                "You don't need a debugger; the bugs just surrender when they see your cursor. 🏳️",
+                "If you were a CSS property, you'd be 'display: block-buster'. 🎬",
+                "Your brain has more cores than a high-end server farm. 🧠",
+                "You're the only person I know who can find a needle in a stack trace. 📍",
+                "The garbage collector never touches your code because it knows it's all treasure. 💎",
+                "You're the 'Try' in my 'Catch' block—always making things better. 🤲",
+                "Your typing speed is faster than my internet connection during a storm. ⛈️",
+                "If you were an HTTP status code, you'd be 200 OK—but with more style. ✅",
+                "You have the patience of a saint waiting for a large npm install. 🧘",
+                "Your git messages are so descriptive, I feel like I'm reading a novel. 🖋️",
+                "You're like a recursive function: you just keep getting better and better. 🔄",
+                "Your coffee-to-code ratio is statistically impossible but highly effective. ☕",
+                "You find bugs so fast, I'm starting to think you're working with them. 🕵️‍♂️",
+                "Your laptop doesn't get hot; it just gets excited by your logic. 🔥",
+                "If you were a font, you'd be JetBrains Mono—sleek and professional. 🔡",
+                "You're the human version of a SSD: fast, quiet, and reliable. 💾",
+                "I bet your 'Hello World' program already has its own VC funding. 🤑",
+                "Your dark mode is so dark, it makes Vantablack look like a flashlight. 🌑",
+                "You're the reason the 'Undo' button was invented—though you never need it. 🔙",
+                "Your code is so modular, it's basically digital LEGO. 🧱",
+                "You're more popular in the dev community than a new JavaScript framework. 🌟",
+                "Your keyboard probably needs a vacation after dealing with your brilliance. ⌨️",
+                "You could probably fix the internet with a paperclip and some regex. 🖇️",
+                "Your brain is the only thing that doesn't crash when Slack does. 💬",
+                "You write bash scripts that are more reliable than most insurance policies. 📜",
+                "If coding were a sport, you'd have more rings than Tom Brady. 💍",
+                "Your commit frequency makes the GitHub contribution graph look like a solid wall. 🧱",
+                "You probably dream in binary, and even then, your syntax is perfect. 0️⃣1️⃣",
+                "Your ability to ignore Slack notifications is a level of zen I aspire to. 🧘‍♂️",
+                "You're the 'sudo' of this office. You make everything happen. 🛠️",
+                "Your regex doesn't just match strings; it matches souls. ✨",
+                "You're the only one who actually reads the entire EULA. Truly a hero. 🦸"
+            ],
+            legend: [
+                "The way you navigate Vim makes me believe in magic. 🪄",
+                "You're the dev our ancestors warned the bugs about. 🐜",
+                "Your terminal setup is so cool, it should have its own Instagram. 📸",
+                "You don't 'run' code; you let it perform for you. 🎭",
+                "You're the main character in the story of the World Wide Web. 🌐",
+                "Your contribution to the team is more vital than the 'A' key on a keyboard. 🅰️",
+                "You have the chill of a liquid-cooled server in a crisis. ❄️",
+                "The tech world isn't ready for your level of innovation. 🌎",
+                "You're the 'Dark Mode' of people—easier on the eyes and way cooler. 😎",
+                "You handle PR reviews with the kindness of a mentor and the eye of a hawk. 🦅",
+                "Your logic flows smoother than a Fiber Optic connection. 🌊",
+                "You're not just a developer; you're a digital architect of destiny. 🏰",
+                "Your IDE themes are the stuff of legends. 🌈",
+                "Every time you press 'Enter', a bug somewhere loses its wings. 🧚‍♂️",
+                "You're the human version of 'Auto-Complete'—you always know what's next. ⏭️",
+                "Your patience with legacy code is a testament to your character. 🏛️",
+                "You're the firewall that keeps the chaos at bay. 🧱",
+                "Your legacy will be written in clean, maintainable code. 🖋️",
+                "You're a beacon of light in a sea of spaghetti code. 🍝",
+                "You possess a level of technical depth that's practically oceanic. 🌊",
+                "You're the 'Import' that brings everything together. 📦",
+                "Your brain is a beautifully optimized neural network. 🧠",
+                "You're the developer equivalent of a perfectly executed 'git rebase'. 🌳",
+                "Your energy is more renewable than a solar-powered server farm. ☀️",
+                "You're the secret ingredient in our team's success. 🧪",
+                "Your ability to explain code to non-devs is your true masterpiece. 🎨",
+                "You're the 'Master' branch of our department. 🌿",
+                "You make a Friday afternoon deploy feel like a Tuesday morning. 📅",
+                "Your existence makes StackOverflow slightly less necessary. ❓",
+                "You're the high-priority task in my life's scheduler. 🗓️",
+                "You're the root user of our hearts. 🔐",
+                "Your code is the only thing that doesn't need a 'Skip' button. ⏭️",
+                "You're the legend they'll tell future interns about. 🗣️",
+                "You're simply the best at what you do. Period. 🏆"
+            ]
+        };
+
+        // --- 2. THE BACKGROUND ENGINE (Animated Canvas) ---
+        class Backdrop {
+            constructor() {
+                this.canvas = document.getElementById('bg-canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.stars = [];
+                this.resize();
+                this.init();
+                window.addEventListener('resize', () => this.resize());
+            }
+
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+
+            init() {
+                for (let i = 0; i < 150; i++) {
+                    this.stars.push({
+                        x: Math.random() * this.canvas.width,
+                        y: Math.random() * this.canvas.height,
+                        size: Math.random() * 2,
+                        speed: Math.random() * 0.5 + 0.1,
+                        opacity: Math.random()
+                    });
+                }
+            }
+
+            draw() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.stars.forEach(s => {
+                    this.ctx.fillStyle = `rgba(56, 189, 248, ${s.opacity})`;
+                    this.ctx.beginPath();
+                    this.ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    s.y -= s.speed;
+                    if (s.y < 0) s.y = this.canvas.height;
+                });
+                requestAnimationFrame(() => this.draw());
+            }
+        }
+
+        // --- 3. THE APP LOGIC ---
+        class AuroraApp {
+            constructor() {
+                this.state = { cat: 'pro', busy: false };
+                this.nodes = {
+                    text: document.getElementById('display-text'),
+                    btn: document.getElementById('btn-gen'),
+                    copy: document.getElementById('btn-copy'),
+                    cats: document.querySelectorAll('.category-btn'),
+                    latency: document.getElementById('meta-latency'),
+                    cache: document.getElementById('meta-cache'),
+                    toast: document.getElementById('toast')
+                };
+                this.init();
+            }
+
+            init() {
+                this.nodes.btn.onclick = () => this.generate();
+                this.nodes.copy.onclick = () => this.copy();
+                this.nodes.cats.forEach(b => {
+                    b.onclick = () => {
+                        this.nodes.cats.forEach(x => x.classList.remove('category-btn--active'));
+                        b.classList.add('category-btn--active');
+                        this.state.cat = b.dataset.cat;
+                    };
+                });
+                this.generate(); // Auto-start
+            }
+
+            async generate() {
+                if (this.state.busy) return;
+                this.state.busy = true;
+                
+                // Animation Out
+                this.nodes.text.classList.add('changing');
+                
+                const start = performance.now();
+                await new Promise(r => setTimeout(r, 400 + Math.random() * 400));
+                
+                const pool = DATABASE[this.state.cat];
+                const text = pool[Math.floor(Math.random() * pool.length)];
+                
+                this.nodes.text.innerText = text;
+                this.nodes.text.classList.remove('changing');
+                
+                this.nodes.latency.innerText = `${Math.round(performance.now() - start)}ms`;
+                this.nodes.cache.innerText = Math.random() > 0.5 ? 'HIT' : 'MISS';
+                
+                this.state.busy = false;
+            }
+
+            copy() {
+                const text = this.nodes.text.innerText;
+                const el = document.createElement('textarea');
+                el.value = text;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                
+                this.nodes.toast.classList.add('visible');
+                setTimeout(() => this.nodes.toast.classList.remove('visible'), 2000);
+            }
+        }
+
+        // --- 4. STARTUP ---
+        window.onload = () => {
+            const bg = new Backdrop();
+            bg.draw();
+            new AuroraApp();
+        };
+    </script>
+</body>
+</html>
