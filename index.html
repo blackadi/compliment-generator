@@ -3,27 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Draco Genesis | Flame-Touched Affirmations</title>
+    <title>Aurora | Neural Affirmation Engine v3.0</title>
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@100..900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 
     <!-- External Libs -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <style>
         :root {
-            --color-bg: #050101;
-            --color-surface: rgba(20, 5, 5, 0.75);
-            --color-accent: #ff4d00;
-            --color-accent-glow: rgba(255, 77, 0, 0.6);
-            --color-gold: #fbbf24;
-            --color-text-main: #fee2e2;
-            --color-text-dim: #991b1b;
-            --color-glass-border: rgba(251, 191, 36, 0.15);
+            --color-bg: #030712;
+            --color-surface: rgba(17, 24, 39, 0.6);
+            --color-accent: #38bdf8;
+            --color-accent-glow: rgba(56, 189, 248, 0.5);
+            --color-purple: #818cf8;
+            --color-text-main: #f9fafb;
+            --color-text-dim: #9ca3af;
+            --color-glass-border: rgba(255, 255, 255, 0.08);
             --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
         }
 
         * { 
@@ -43,10 +44,11 @@
             justify-content: center;
             overflow: hidden;
             line-height: 1.5;
+            position: relative;
         }
 
         /* 3D Canvas Layer */
-        #dragon-canvas {
+        #three-canvas {
             position: fixed;
             top: 0;
             left: 0;
@@ -58,20 +60,20 @@
         /* UI Layer */
         .app-shell {
             width: 100%;
-            max-width: min(90vw, 850px);
+            max-width: min(90vw, 900px);
             z-index: 10;
             padding: 1rem;
             position: relative;
         }
 
-        /* Dragon Scale Texture Border */
+        /* Responsive Card Logic */
         .card-wrapper {
             position: relative;
-            padding: 3px;
-            border-radius: 28px;
-            background: linear-gradient(var(--angle, 0deg), #450a0a, var(--color-accent), var(--color-gold), #450a0a);
-            animation: rotate-gradient 6s linear infinite;
-            box-shadow: 0 0 80px rgba(0, 0, 0, 0.9);
+            padding: 1.5px;
+            border-radius: 24px;
+            background: linear-gradient(var(--angle, 0deg), transparent 30%, var(--color-accent), var(--color-purple), transparent);
+            animation: rotate-gradient 8s linear infinite;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
         }
 
         @property --angle {
@@ -86,71 +88,67 @@
 
         .generator-card {
             background: var(--color-surface);
-            backdrop-filter: blur(50px);
-            -webkit-backdrop-filter: blur(50px);
-            border-radius: 26px;
-            padding: clamp(1.5rem, 6vw, 4rem);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border-radius: 23px;
+            padding: clamp(1.5rem, 5vw, 4rem);
             position: relative;
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            gap: 2.5rem;
-            border: 1px solid rgba(251, 191, 36, 0.1);
+            gap: 2rem;
         }
 
-        /* Dragon Themed Header */
+        /* Header Styles */
         .header { text-align: center; }
         .header__title {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
-            letter-spacing: 0.5em;
-            color: var(--color-gold);
-            font-family: 'Cinzel', serif;
+            letter-spacing: 0.4em;
+            color: var(--color-accent);
+            font-family: 'JetBrains Mono', monospace;
             margin-bottom: 0.5rem;
-            text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+            opacity: 0.8;
         }
 
         .header__subtitle {
-            font-family: 'Cinzel', serif;
-            font-size: clamp(1.8rem, 5vw, 3rem);
-            font-weight: 900;
-            background: linear-gradient(to bottom, #fff, var(--color-gold));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            font-weight: 200;
+            letter-spacing: -0.02em;
         }
 
         /* Interactive Controls */
         .controls {
             display: flex;
-            gap: 0.75rem;
+            gap: 0.5rem;
             justify-content: center;
             flex-wrap: wrap;
         }
 
         .category-btn {
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(255, 255, 255, 0.03);
             border: 1px solid var(--color-glass-border);
-            color: var(--color-gold);
-            padding: 0.7rem 1.4rem;
-            border-radius: 8px;
+            color: var(--color-text-dim);
+            padding: 0.6rem 1.2rem;
+            border-radius: 100px;
             cursor: pointer;
-            font-family: 'Cinzel', serif;
-            font-size: 0.8rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
             transition: all 0.4s var(--ease-out-expo);
-            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%);
+            white-space: nowrap;
         }
 
         .category-btn--active {
             background: var(--color-accent);
-            color: white;
+            color: var(--color-bg);
             border-color: var(--color-accent);
-            box-shadow: 0 0 30px var(--color-accent-glow);
-            transform: scale(1.1);
+            box-shadow: 0 0 25px var(--color-accent-glow);
+            transform: scale(1.05);
         }
 
         /* Content Display */
         .display {
-            min-height: 200px;
+            min-height: 220px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -160,41 +158,42 @@
         }
 
         .display__text {
-            font-size: clamp(1.2rem, 3.8vw, 2rem);
-            font-weight: 400;
-            max-width: 650px;
+            font-size: clamp(1.1rem, 3.5vw, 1.75rem);
+            font-weight: 300;
+            max-width: 600px;
             line-height: 1.4;
-            color: #fff;
-            text-shadow: 0 0 20px rgba(255, 77, 0, 0.3);
-            transition: all 0.7s var(--ease-out-expo);
+            transition: all 0.6s var(--ease-out-expo);
+            transform-style: preserve-3d;
         }
 
         .display__text.changing {
             opacity: 0;
-            transform: scale(1.1) rotateY(180deg);
-            filter: blur(10px) brightness(3);
+            transform: translateY(20px) rotateX(-15deg);
+            filter: blur(15px);
         }
 
-        /* Metadata */
+        /* System Metadata */
         .metadata {
+            margin-top: 2rem;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.7rem;
-            color: var(--color-gold);
+            font-size: 0.65rem;
+            color: var(--color-text-dim);
             display: flex;
             justify-content: space-between;
             width: 100%;
-            padding: 1rem;
-            border-radius: 8px;
-            background: rgba(0, 0, 0, 0.5);
-            border-top: 1px solid var(--color-gold);
-            opacity: 0.7;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--color-glass-border);
         }
+
+        .metadata span { color: var(--color-accent); font-weight: 700; }
 
         /* Action Buttons */
         .actions { 
             display: grid; 
             grid-template-columns: 2fr 1fr;
-            gap: 1.5rem; 
+            gap: 1rem; 
         }
 
         .btn {
@@ -202,90 +201,375 @@
             align-items: center;
             justify-content: center;
             gap: 0.75rem;
-            padding: 1.4rem;
-            border-radius: 12px;
-            font-weight: 800;
+            padding: 1.25rem;
+            border-radius: 16px;
+            font-weight: 700;
             cursor: pointer;
             transition: all 0.3s var(--ease-out-expo);
             border: none;
-            font-family: 'Cinzel', serif;
-            font-size: 1rem;
+            font-size: 0.85rem;
             text-transform: uppercase;
+            letter-spacing: 0.1em;
+            position: relative;
+            overflow: hidden;
         }
 
         .btn--primary {
-            background: linear-gradient(45deg, #7f1d1d, #ef4444);
-            color: white;
-            box-shadow: 0 10px 40px rgba(153, 27, 27, 0.4);
+            background: var(--color-accent);
+            color: var(--color-bg);
         }
 
-        .btn--primary:active { transform: translateY(4px); }
+        .btn--primary:active { transform: scale(0.95); }
 
         .btn--secondary {
-            background: rgba(251, 191, 36, 0.1);
-            color: var(--color-gold);
-            border: 1px solid var(--color-gold);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--color-text-main);
+            border: 1px solid var(--color-glass-border);
         }
 
+        /* Feedback UI */
         .toast {
             position: fixed;
-            bottom: 2rem;
+            bottom: calc(2rem + var(--safe-area-inset-bottom));
             left: 50%;
             transform: translateX(-50%) translateY(100px);
-            background: var(--color-gold);
-            color: #000;
-            padding: 0.8rem 1.8rem;
-            border-radius: 4px;
-            font-family: 'Cinzel', serif;
-            font-weight: 700;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            background: var(--color-purple);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 100px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
             transition: 0.5s var(--ease-out-expo);
             z-index: 1000;
         }
 
         .toast.visible { transform: translateX(-50%) translateY(0); }
 
+        /* Mobile Adaptations */
         @media (max-width: 640px) {
             .actions { grid-template-columns: 1fr; }
-            .generator-card { padding: 2rem 1.5rem; }
+            .generator-card { padding: 1.5rem; }
+            .category-btn { padding: 0.5rem 1rem; font-size: 0.65rem; }
+            .metadata { flex-direction: column; gap: 0.4rem; align-items: center; }
         }
     </style>
 </head>
 <body>
 
-    <canvas id="dragon-canvas"></canvas>
+    <canvas id="three-canvas"></canvas>
 
     <main class="app-shell">
         <div class="card-wrapper">
             <section class="generator-card">
                 <header class="header">
-                    <p class="header__title">Ancient Hoard Records</p>
-                    <h1 class="header__subtitle">DRACO GENESIS</h1>
+                    <p class="header__title">Adaptive Logic System</p>
+                    <h1 class="header__subtitle">Aurora <span style="font-weight: 600;">Elysium</span></h1>
                 </header>
 
                 <nav class="controls">
-                    <button class="category-btn category-btn--active" data-cat="pro">Grand Architect</button>
-                    <button class="category-btn" data-cat="humor">Jester</button>
-                    <button class="category-btn" data-cat="legend">Mythic Lord</button>
+                    <button class="category-btn category-btn--active" data-cat="pro">Architect</button>
+                    <button class="category-btn" data-cat="humor">Satire</button>
+                    <button class="category-btn" data-cat="legend">Mythic</button>
                 </nav>
 
                 <div class="display">
-                    <blockquote class="display__text" id="display-text">Waking the Beast...</blockquote>
+                    <blockquote class="display__text" id="display-text">Initializing Neural Web...</blockquote>
                     
                     <div class="metadata">
-                        <div>BLOODLINE: <span id="meta-sync">ELDER</span></div>
-                        <div>FURY: <span id="meta-latency">LOW</span></div>
-                        <div>SCALE: <span id="meta-node">OBSIDIAN</span></div>
+                        <div>SYNC: <span id="meta-sync">STABLE</span></div>
+                        <div>SIGNAL: <span id="meta-latency">0ms</span></div>
+                        <div>ID: <span id="meta-node">AURORA-X1</span></div>
                     </div>
                 </div>
 
                 <footer class="actions">
                     <button class="btn btn--primary" id="btn-gen">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
-                        Incinerate
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path></svg>
+                        Synthesize
                     </button>
                     <button class="btn btn--secondary" id="btn-copy">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                     </button>
                 </footer>
-            </
+            </section>
+        </div>
+    </main>
+
+    <div id="toast" class="toast">Core state mirrored to clipboard.</div>
+
+    <script>
+        /**
+         * AURORA ELYSIUM v3.0
+         * Three.js Render | Audio Synthesis | Adaptive UI
+         */
+
+        // --- 1. AUDIO ENGINE (Synthesized Sound) ---
+        class AudioEngine {
+            constructor() {
+                this.ctx = null;
+            }
+            init() {
+                if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            playBeep(freq = 440, duration = 0.1, type = 'sine') {
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + duration);
+            }
+            playClick() { this.playBeep(880, 0.05, 'square'); }
+            playSuccess() { 
+                this.playBeep(440, 0.2); 
+                setTimeout(() => this.playBeep(880, 0.2), 50);
+            }
+        }
+
+        // --- 2. 3D VISUAL ENGINE (Three.js) ---
+        class World3D {
+            constructor() {
+                this.container = document.getElementById('three-canvas');
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.renderer = new THREE.WebGLRenderer({ canvas: this.container, antialias: true, alpha: true });
+                this.particles = null;
+                this.init();
+            }
+
+            init() {
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                
+                // Particle Cloud
+                const geo = new THREE.BufferGeometry();
+                const count = 2000;
+                const pos = new Float32Array(count * 3);
+                for(let i = 0; i < count * 3; i++) pos[i] = (Math.random() - 0.5) * 10;
+                geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+                
+                const mat = new THREE.PointsMaterial({
+                    size: 0.015,
+                    color: 0x38bdf8,
+                    transparent: true,
+                    opacity: 0.6,
+                    blending: THREE.AdditiveBlending
+                });
+                
+                this.particles = new THREE.Points(geo, mat);
+                this.scene.add(this.particles);
+                
+                this.camera.position.z = 4;
+                
+                window.addEventListener('resize', () => {
+                    this.camera.aspect = window.innerWidth / window.innerHeight;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                });
+            }
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                this.particles.rotation.y += 0.001;
+                this.particles.rotation.x += 0.0005;
+                
+                // Gentle floating effect
+                this.camera.position.x = Math.sin(Date.now() * 0.0005) * 0.2;
+                this.camera.position.y = Math.cos(Date.now() * 0.0005) * 0.2;
+                this.camera.lookAt(0,0,0);
+                
+                this.renderer.render(this.scene, this.camera);
+            }
+        }
+
+        // --- 3. THE DATA (100 COMPLIMENTS) ---
+        const DATABASE = {
+            pro: [
+                "Your code structure is so clean, it could be used as a textbook example of SOLID principles. 📐",
+                "You have a unique talent for turning legacy technical debt into scalable gold. 💰",
+                "Your documentation is so clear, even the project managers understand it. 📚",
+                "The way you handle race conditions suggests you've mastered time itself. ⏳",
+                "Your pull requests are like poetry; every line has a profound purpose. ✍️",
+                "You're the kind of developer who makes a 10x team feel like a 100x team. 🚀",
+                "Your ability to debug complex distributed systems is practically a superpower. 🦸‍♂️",
+                "Your UI implementations are so pixel-perfect, they make designers weep with joy. 🎨",
+                "You don't just solve problems; you anticipate and neutralize them before they exist. 🛡️",
+                "Your architectural decisions are the bedrock of this entire ecosystem. 🧱",
+                "You write unit tests that actually find bugs. That's a rare and beautiful gift. 🧪",
+                "The complexity of your brain must be O(log n), because you scale perfectly. 📈",
+                "Your refactoring is so efficient, it's like watching a master sculptor at work. 🗿",
+                "You have the rare ability to see the forest, the trees, and the individual pine needles. 🌲",
+                "Your CLI tools are so intuitive, they feel like an extension of the user's mind. ⌨️",
+                "You handle edge cases with the grace of a professional ballerina. 🩰",
+                "Your security audits are more thorough than a deep-space scan. 📡",
+                "You manage state so well, even the universe is jealous of your consistency. 🌌",
+                "Your API designs are a masterclass in developer experience. 🛠️",
+                "You're the person everyone wants in their 'war room' when production goes down. 🆘",
+                "Your commitment to accessibility proves you're a developer with a heart. ❤️",
+                "Your build pipelines are so fast, they finish before you can even think about coffee. ☕",
+                "You're not just a coder; you're a high-fidelity translator between logic and human needs. 🗣️",
+                "Your curiosity is an infinite loop of improvement. ♾️",
+                "You make 'impossible' requirements look like morning warm-ups. ☀️",
+                "Your naming conventions are so clear, they practically tell a bedtime story. 📖",
+                "You treat every bug report like a puzzle to be savored, not a chore to be feared. 🧩",
+                "Your empathy for the end-user is visible in every button click. 🖱️",
+                "You have the focus of a laser and the flexibility of a liquid. 💎",
+                "Your version control history is a work of historical non-fiction. 📜",
+                "Your enthusiasm for learning new stacks is infectious. 🤒",
+                "You're the human equivalent of a high-availability cluster. ☁️",
+                "Your logic is so robust, it could survive a trip through a black hole. 🕳️"
+            ],
+            humor: [
+                "Your code is so efficient, it makes the 'O' in Big O stand for 'Oh wow!'. 😮",
+                "You don't need a debugger; the bugs just surrender when they see your cursor. 🏳️",
+                "If you were a CSS property, you'd be 'display: block-buster'. 🎬",
+                "Your brain has more cores than a high-end server farm. 🧠",
+                "You're the only person I know who can find a needle in a stack trace. 📍",
+                "The garbage collector never touches your code because it knows it's all treasure. 💎",
+                "You're the 'Try' in my 'Catch' block—always making things better. 🤲",
+                "Your typing speed is faster than my internet connection during a storm. ⛈️",
+                "If you were an HTTP status code, you'd be 200 OK—but with more style. ✅",
+                "You have the patience of a saint waiting for a large npm install. 🧘",
+                "Your git messages are so descriptive, I feel like I'm reading a novel. 🖋️",
+                "You're like a recursive function: you just keep getting better and better. 🔄",
+                "Your coffee-to-code ratio is statistically impossible but highly effective. ☕",
+                "You find bugs so fast, I'm starting to think you're working with them. 🕵️‍♂️",
+                "Your laptop doesn't get hot; it just gets excited by your logic. 🔥",
+                "If you were a font, you'd be JetBrains Mono—sleek and professional. 🔡",
+                "You're the human version of a SSD: fast, quiet, and reliable. 💾",
+                "I bet your 'Hello World' program already has its own VC funding. 🤑",
+                "Your dark mode is so dark, it makes Vantablack look like a flashlight. 🌑",
+                "You're the reason the 'Undo' button was invented—though you never need it. 🔙",
+                "Your code is so modular, it's basically digital LEGO. 🧱",
+                "You're more popular in the dev community than a new JavaScript framework. 🌟",
+                "Your keyboard probably needs a vacation after dealing with your brilliance. ⌨️",
+                "You could probably fix the internet with a paperclip and some regex. 🖇️",
+                "Your brain is the only thing that doesn't crash when Slack does. 💬",
+                "You write bash scripts that are more reliable than most insurance policies. 📜",
+                "If coding were a sport, you'd have more rings than Tom Brady. 💍",
+                "Your commit frequency makes the GitHub contribution graph look like a solid wall. 🧱",
+                "You probably dream in binary, and even then, your syntax is perfect. 0️⃣1️⃣",
+                "Your ability to ignore Slack notifications is a level of zen I aspire to. 🧘‍♂️",
+                "You're the 'sudo' of this office. You make everything happen. 🛠️",
+                "Your regex doesn't just match strings; it matches souls. ✨",
+                "You're the only one who actually reads the entire EULA. Truly a hero. 🦸"
+            ],
+            legend: [
+                "The way you navigate Vim makes me believe in magic. 🪄",
+                "You're the dev our ancestors warned the bugs about. 🐜",
+                "Your terminal setup is so cool, it should have its own Instagram. 📸",
+                "You don't 'run' code; you let it perform for you. 🎭",
+                "You're the main character in the story of the World Wide Web. 🌐",
+                "Your contribution to the team is more vital than the 'A' key on a keyboard. 🅰️",
+                "You have the chill of a liquid-cooled server in a crisis. ❄️",
+                "The tech world isn't ready for your level of innovation. 🌎",
+                "You're the 'Dark Mode' of people—easier on the eyes and way cooler. 😎",
+                "You handle PR reviews with the kindness of a mentor and the eye of a hawk. 🦅",
+                "Your logic flows smoother than a Fiber Optic connection. 🌊",
+                "You're not just a developer; you're a digital architect of destiny. 🏰",
+                "Your IDE themes are the stuff of legends. 🌈",
+                "Every time you press 'Enter', a bug somewhere loses its wings. 🧚‍♂️",
+                "You're the human version of 'Auto-Complete'—you always know what's next. ⏭️",
+                "Your patience with legacy code is a testament to your character. 🏛️",
+                "You're the firewall that keeps the chaos at bay. 🧱",
+                "Your legacy will be written in clean, maintainable code. 🖋️",
+                "You're a beacon of light in a sea of spaghetti code. 🍝",
+                "You possess a level of technical depth that's practically oceanic. 🌊",
+                "You're the 'Import' that brings everything together. 📦",
+                "Your brain is a beautifully optimized neural network. 🧠",
+                "You're the developer equivalent of a perfectly executed 'git rebase'. 🌳",
+                "Your energy is more renewable than a solar-powered server farm. ☀️",
+                "You're the secret ingredient in our team's success. 🧪",
+                "Your ability to explain code to non-devs is your true masterpiece. 🎨",
+                "You're the 'Master' branch of our department. 🌿",
+                "You make a Friday afternoon deploy feel like a Tuesday morning. 📅",
+                "Your existence makes StackOverflow slightly less necessary. ❓",
+                "You're the high-priority task in my life's scheduler. 🗓️",
+                "You're the root user of our hearts. 🔐",
+                "Your code is the only thing that doesn't need a 'Skip' button. ⏭️",
+                "You're the legend they'll tell future interns about. 🗣️",
+                "You're simply the best at what you do. Period. 🏆"
+            ]
+        };
+
+        // --- 4. APP CONTROLLER ---
+        class AuroraApp {
+            constructor() {
+                this.audio = new AudioEngine();
+                this.state = { cat: 'pro', busy: false };
+                this.nodes = {
+                    text: document.getElementById('display-text'),
+                    btn: document.getElementById('btn-gen'),
+                    copy: document.getElementById('btn-copy'),
+                    cats: document.querySelectorAll('.category-btn'),
+                    latency: document.getElementById('meta-latency'),
+                    toast: document.getElementById('toast')
+                };
+                this.init();
+            }
+
+            init() {
+                this.nodes.btn.onclick = () => { this.audio.playClick(); this.generate(); };
+                this.nodes.copy.onclick = () => { this.audio.playClick(); this.copy(); };
+                
+                this.nodes.cats.forEach(b => {
+                    b.onclick = () => {
+                        this.audio.playClick();
+                        this.nodes.cats.forEach(x => x.classList.remove('category-btn--active'));
+                        b.classList.add('category-btn--active');
+                        this.state.cat = b.dataset.cat;
+                    };
+                });
+                
+                this.generate();
+            }
+
+            async generate() {
+                if (this.state.busy) return;
+                this.state.busy = true;
+                
+                this.nodes.text.classList.add('changing');
+                
+                const start = performance.now();
+                await new Promise(r => setTimeout(r, 600));
+                
+                const pool = DATABASE[this.state.cat];
+                const text = pool[Math.floor(Math.random() * pool.length)];
+                
+                this.nodes.text.innerText = text;
+                this.nodes.text.classList.remove('changing');
+                
+                this.nodes.latency.innerText = `${Math.round(performance.now() - start)}ms`;
+                this.state.busy = false;
+            }
+
+            copy() {
+                const text = this.nodes.text.innerText;
+                const el = document.createElement('textarea');
+                el.value = text;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                
+                this.audio.playSuccess();
+                this.nodes.toast.classList.add('visible');
+                setTimeout(() => this.nodes.toast.classList.remove('visible'), 2500);
+            }
+        }
+
+        // --- 5. INITIALIZATION ---
+        window.addEventListener('load', () => {
+            const world = new World3D();
+            world.animate();
+            new AuroraApp();
+        });
+    </script>
+</body>
+</html>
