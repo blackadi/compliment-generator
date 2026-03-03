@@ -47,7 +47,6 @@
             position: relative;
         }
 
-        /* 3D Canvas Layer */
         #three-canvas {
             position: fixed;
             top: 0;
@@ -57,7 +56,6 @@
             z-index: 1;
         }
 
-        /* UI Layer */
         .app-shell {
             width: 100%;
             max-width: min(90vw, 900px);
@@ -66,7 +64,6 @@
             position: relative;
         }
 
-        /* Responsive Card Logic */
         .card-wrapper {
             position: relative;
             padding: 1.5px;
@@ -99,7 +96,6 @@
             gap: 2rem;
         }
 
-        /* Header Styles */
         .header { text-align: center; }
         .header__title {
             font-size: 0.75rem;
@@ -117,7 +113,6 @@
             letter-spacing: -0.02em;
         }
 
-        /* Interactive Controls */
         .controls {
             display: flex;
             gap: 0.5rem;
@@ -146,7 +141,6 @@
             transform: scale(1.05);
         }
 
-        /* Content Display */
         .display {
             min-height: 220px;
             display: flex;
@@ -172,7 +166,6 @@
             filter: blur(15px);
         }
 
-        /* System Metadata */
         .metadata {
             margin-top: 2rem;
             font-family: 'JetBrains Mono', monospace;
@@ -189,7 +182,6 @@
 
         .metadata span { color: var(--color-accent); font-weight: 700; }
 
-        /* Action Buttons */
         .actions { 
             display: grid; 
             grid-template-columns: 2fr 1fr;
@@ -219,15 +211,12 @@
             color: var(--color-bg);
         }
 
-        .btn--primary:active { transform: scale(0.95); }
-
         .btn--secondary {
             background: rgba(255, 255, 255, 0.05);
             color: var(--color-text-main);
             border: 1px solid var(--color-glass-border);
         }
 
-        /* Feedback UI */
         .toast {
             position: fixed;
             bottom: calc(2rem + var(--safe-area-inset-bottom));
@@ -246,7 +235,6 @@
 
         .toast.visible { transform: translateX(-50%) translateY(0); }
 
-        /* Mobile Adaptations */
         @media (max-width: 640px) {
             .actions { grid-template-columns: 1fr; }
             .generator-card { padding: 1.5rem; }
@@ -300,39 +288,112 @@
 
     <script>
         /**
-         * AURORA ELYSIUM v3.0
-         * Three.js Render | Audio Synthesis | Adaptive UI
+         * AURORA ELYSIUM v3.3
+         * Unified Navigation Audio Logic
          */
 
-        // --- 1. AUDIO ENGINE (Synthesized Sound) ---
         class AudioEngine {
             constructor() {
                 this.ctx = null;
+                this.mainGain = null;
+                this.limiter = null;
             }
+
             init() {
-                if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    this.mainGain = this.ctx.createGain();
+                    this.mainGain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                    
+                    this.limiter = this.ctx.createDynamicsCompressor();
+                    this.limiter.threshold.setValueAtTime(-3, this.ctx.currentTime);
+                    
+                    this.mainGain.connect(this.limiter);
+                    this.limiter.connect(this.ctx.destination);
+                }
+                if (this.ctx.state === 'suspended') this.ctx.resume();
             }
-            playBeep(freq = 440, duration = 0.1, type = 'sine') {
+
+            // Unified Sound for all Category Navigation Buttons
+            playNavSound() {
                 this.init();
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = type;
-                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start();
-                osc.stop(this.ctx.currentTime + duration);
+                const now = this.ctx.currentTime;
+                
+                // Attack transient (Click)
+                const click = this.ctx.createOscillator();
+                const clickGain = this.ctx.createGain();
+                click.type = 'sine';
+                click.frequency.setValueAtTime(2400, now);
+                click.frequency.exponentialRampToValueAtTime(800, now + 0.05);
+                clickGain.gain.setValueAtTime(0.15, now);
+                clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                
+                // Body resonance (Hum)
+                const body = this.ctx.createOscillator();
+                const bodyGain = this.ctx.createGain();
+                body.type = 'triangle';
+                body.frequency.setValueAtTime(220, now);
+                bodyGain.gain.setValueAtTime(0.05, now);
+                bodyGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+                click.connect(clickGain);
+                body.connect(bodyGain);
+                clickGain.connect(this.mainGain);
+                bodyGain.connect(this.mainGain);
+
+                click.start(now);
+                body.start(now);
+                click.stop(now + 0.05);
+                body.stop(now + 0.15);
             }
-            playClick() { this.playBeep(880, 0.05, 'square'); }
-            playSuccess() { 
-                this.playBeep(440, 0.2); 
-                setTimeout(() => this.playBeep(880, 0.2), 50);
+
+            // "Synthesize" Button Sound
+            playSynthesizeSound() {
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const g = this.ctx.createGain();
+                const filter = this.ctx.createBiquadFilter();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, now);
+                osc.frequency.exponentialRampToValueAtTime(440, now + 0.1);
+
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(2000, now);
+                filter.frequency.exponentialRampToValueAtTime(100, now + 0.4);
+
+                g.gain.setValueAtTime(0, now);
+                g.gain.linearRampToValueAtTime(0.4, now + 0.01);
+                g.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+
+                osc.connect(filter);
+                filter.connect(g);
+                g.connect(this.mainGain);
+
+                osc.start(now);
+                osc.stop(now + 0.5);
+            }
+
+            // "Copy" Button Sound
+            playCopySound() {
+                this.init();
+                const now = this.ctx.currentTime;
+                for(let i=0; i<3; i++) {
+                    const osc = this.ctx.createOscillator();
+                    const g = this.ctx.createGain();
+                    osc.frequency.setValueAtTime(1200 + (i*400), now + (i*0.04));
+                    g.gain.setValueAtTime(0, now + (i*0.04));
+                    g.gain.linearRampToValueAtTime(0.08, now + (i*0.04) + 0.01);
+                    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
+                    osc.connect(g);
+                    g.connect(this.mainGain);
+                    osc.start(now + (i*0.04));
+                    osc.stop(now + 0.4);
+                }
             }
         }
 
-        // --- 2. 3D VISUAL ENGINE (Three.js) ---
         class World3D {
             constructor() {
                 this.container = document.getElementById('three-canvas');
@@ -346,27 +407,15 @@
             init() {
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
                 this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-                
-                // Particle Cloud
                 const geo = new THREE.BufferGeometry();
-                const count = 2000;
+                const count = 1500;
                 const pos = new Float32Array(count * 3);
                 for(let i = 0; i < count * 3; i++) pos[i] = (Math.random() - 0.5) * 10;
                 geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-                
-                const mat = new THREE.PointsMaterial({
-                    size: 0.015,
-                    color: 0x38bdf8,
-                    transparent: true,
-                    opacity: 0.6,
-                    blending: THREE.AdditiveBlending
-                });
-                
+                const mat = new THREE.PointsMaterial({ size: 0.02, color: 0x38bdf8, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending });
                 this.particles = new THREE.Points(geo, mat);
                 this.scene.add(this.particles);
-                
-                this.camera.position.z = 4;
-                
+                this.camera.position.z = 5;
                 window.addEventListener('resize', () => {
                     this.camera.aspect = window.innerWidth / window.innerHeight;
                     this.camera.updateProjectionMatrix();
@@ -376,19 +425,11 @@
 
             animate() {
                 requestAnimationFrame(() => this.animate());
-                this.particles.rotation.y += 0.001;
-                this.particles.rotation.x += 0.0005;
-                
-                // Gentle floating effect
-                this.camera.position.x = Math.sin(Date.now() * 0.0005) * 0.2;
-                this.camera.position.y = Math.cos(Date.now() * 0.0005) * 0.2;
-                this.camera.lookAt(0,0,0);
-                
+                this.particles.rotation.y += 0.0008;
                 this.renderer.render(this.scene, this.camera);
             }
         }
 
-        // --- 3. THE DATA (100 COMPLIMENTS) ---
         const DATABASE = {
             pro: [
                 "Your code structure is so clean, it could be used as a textbook example of SOLID principles. 📐",
@@ -498,7 +539,6 @@
             ]
         };
 
-        // --- 4. APP CONTROLLER ---
         class AuroraApp {
             constructor() {
                 this.audio = new AudioEngine();
@@ -515,36 +555,36 @@
             }
 
             init() {
-                this.nodes.btn.onclick = () => { this.audio.playClick(); this.generate(); };
-                this.nodes.copy.onclick = () => { this.audio.playClick(); this.copy(); };
+                this.nodes.btn.onclick = () => { 
+                    this.audio.playSynthesizeSound(); 
+                    this.generate(); 
+                };
+                
+                this.nodes.copy.onclick = () => { 
+                    this.audio.playCopySound(); 
+                    this.copy(); 
+                };
                 
                 this.nodes.cats.forEach(b => {
                     b.onclick = () => {
-                        this.audio.playClick();
+                        this.audio.playNavSound();
                         this.nodes.cats.forEach(x => x.classList.remove('category-btn--active'));
                         b.classList.add('category-btn--active');
                         this.state.cat = b.dataset.cat;
                     };
                 });
-                
                 this.generate();
             }
 
             async generate() {
                 if (this.state.busy) return;
                 this.state.busy = true;
-                
                 this.nodes.text.classList.add('changing');
-                
                 const start = performance.now();
                 await new Promise(r => setTimeout(r, 600));
-                
                 const pool = DATABASE[this.state.cat];
-                const text = pool[Math.floor(Math.random() * pool.length)];
-                
-                this.nodes.text.innerText = text;
+                this.nodes.text.innerText = pool[Math.floor(Math.random() * pool.length)];
                 this.nodes.text.classList.remove('changing');
-                
                 this.nodes.latency.innerText = `${Math.round(performance.now() - start)}ms`;
                 this.state.busy = false;
             }
@@ -557,14 +597,11 @@
                 el.select();
                 document.execCommand('copy');
                 document.body.removeChild(el);
-                
-                this.audio.playSuccess();
                 this.nodes.toast.classList.add('visible');
                 setTimeout(() => this.nodes.toast.classList.remove('visible'), 2500);
             }
         }
 
-        // --- 5. INITIALIZATION ---
         window.addEventListener('load', () => {
             const world = new World3D();
             world.animate();
